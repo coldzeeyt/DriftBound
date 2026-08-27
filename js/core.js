@@ -7,11 +7,29 @@ var SS = (function () {
     GRID: 40,
     GRAVITY: 2600,
     JUMP_SPEED: 880,
-    SHIP_THRUST: 2100,
-    SHIP_MAX_VY: 480,
-    UFO_HOP_SPEED: 760,
-    WAVE_SPEED: 480,
-    BALL_FLIP_KICK: 260,
+
+    // Bolt: grounded jump with variable height while held
+    BOLT_HOLD_GRAVITY_MULT: 0.45,
+    BOLT_MAX_HOLD_TIME: 0.26,
+
+    // Pulsar: hold to charge a launch, release to fire
+    PULSAR_MIN_LAUNCH: 420,
+    PULSAR_MAX_LAUNCH: 980,
+    PULSAR_MAX_CHARGE_TIME: 0.62,
+
+    // Comet: tap-boost impulse, floaty capped glide between taps
+    COMET_BOOST_SPEED: 640,
+    COMET_TERMINAL_FALL: 250,
+    COMET_BOOST_COOLDOWN: 0.1,
+
+    // Anchor: eased arc leap to the opposite surface
+    ANCHOR_ARC_TIME: 0.5,
+    ANCHOR_ARC_BULGE: 26,
+
+    // Phase: acceleration-based drift (momentum carries through)
+    PHASE_ACCEL: 1900,
+    PHASE_MAX_SPEED: 520,
+
     PLAYER_SIZE: 34,
     PLAYER_SCREEN_X_RATIO: 0.26,
     GROUND_MARGIN: 90,   // px from bottom of play area to canvas bottom

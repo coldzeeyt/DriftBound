@@ -73,11 +73,11 @@ html,body{
 .howto-card h3{ margin:6px 0 4px; font-size:13px; }
 .howto-card p{ margin:0; font-size:11px; color:var(--text-dim); line-height:1.3; }
 .howto-icon{ width:28px; height:28px; margin:0 auto; border-radius:6px; }
-.mode-cube{ background:#4fd1ff; border-radius:6px; }
-.mode-ship{ background:#ffb14f; clip-path:polygon(0% 50%, 100% 20%, 100% 80%); }
-.mode-ball{ background:#c14fff; border-radius:50%; }
-.mode-ufo{ background:#5fffa0; border-radius:50% 50% 40% 40%; }
-.mode-wave{ background:#ff5fa2; clip-path:polygon(0 0,100% 50%,0 100%); }
+.mode-bolt{ background:#4fd1ff; clip-path:polygon(58% 0%, 18% 55%, 44% 55%, 38% 100%, 84% 40%, 52% 40%); }
+.mode-pulsar{ background:radial-gradient(circle, transparent 38%, #ffb14f 42%, #ffb14f 58%, transparent 62%); border-radius:50%; }
+.mode-comet{ background:#ff9a4f; clip-path:polygon(100% 50%, 38% 18%, 55% 50%, 38% 82%); }
+.mode-anchor{ background:#c14fff; clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+.mode-phase{ background:#5fe8ff; clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
 .howto-note{ font-size:12px; color:var(--text-dim); line-height:1.5; }
 @media (max-width:640px){ .howto-grid{ grid-template-columns:repeat(3,1fr);} }
 

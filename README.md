@@ -20,12 +20,22 @@ on your current game mode.
 
 ## Game modes
 
-- **Cube** — press to jump when grounded.
-- **Ship** — hold to fly up, release to fall.
-- **Ball** — press to instantly flip gravity; rolls on floor or ceiling.
-- **UFO** — each separate press gives one hop; tap repeatedly to climb.
-- **Wave** — hold to angle up, release to angle down; touching anything is
-  deadly, including the floor and ceiling.
+Five original modes, each with a genuinely different control scheme (not
+reskins of any other game's modes):
+
+- **Bolt** — press to jump when grounded; hold while ascending to jump
+  higher (variable height, not a fixed-height tap-jump).
+- **Pulsar** — hold to charge a launch, release to fire; a quick tap still
+  gives a minimal hop, but holding longer launches you much further.
+- **Comet** — never lands. Each tap snaps in a boost impulse; between taps
+  you glide down at a slow, floaty capped speed instead of accelerating
+  under full gravity.
+- **Anchor** — press while grounded to leap the gap in a ~half-second eased
+  arc to the opposite surface (floor/ceiling), instead of flipping there
+  instantly — hazard timing during the arc matters.
+- **Phase** — never lands; touching anything is deadly. Holding/releasing
+  changes which way you're *accelerating*, not your velocity directly, so
+  momentum carries through turns instead of snapping to a fixed direction.
 
 Levels can switch your mode mid-run with **mode portals**, and flip which
 way is "down" with **gravity portals**. Yellow **orbs** give a mid-air boost
@@ -33,9 +43,9 @@ when you press near them; pink **pads** bounce you automatically.
 
 ## Modes to play
 
-- **Play** — four hand-built levels (First Steps, Skyward, Gravity Flux,
-  Mode Rush) that ramp up in difficulty and mode variety, ending at a finish
-  flag.
+- **Play** — four hand-built levels (First Steps, Afterburn, Surface
+  Tension, Momentum) that ramp up in difficulty and mode variety, ending at
+  a finish flag.
 - **Endless Mode** — the level never ends. Obstacles are generated
   procedurally forever, speed and difficulty creep up with distance, and
   your best distance is saved locally.

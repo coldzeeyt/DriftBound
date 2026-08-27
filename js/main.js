@@ -71,7 +71,7 @@
 
   function startEndless() {
     returnTo = 'menu';
-    game.load({ startMode: 'cube', scrollSpeed: SS.C.DEFAULT_SCROLL_SPEED }, true, null);
+    game.load({ startMode: 'bolt', scrollSpeed: SS.C.DEFAULT_SCROLL_SPEED }, true, null);
     goto('screen-game', 'game');
   }
 

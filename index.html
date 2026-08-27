@@ -29,11 +29,11 @@
   <div class="panel howto-panel">
     <h2>How to Play</h2>
     <div class="howto-grid">
-      <div class="howto-card"><div class="howto-icon mode-cube"></div><h3>Cube</h3><p>Press to jump. Lands on ground &amp; blocks.</p></div>
-      <div class="howto-card"><div class="howto-icon mode-ship"></div><h3>Ship</h3><p>Hold to fly up, release to fall.</p></div>
-      <div class="howto-card"><div class="howto-icon mode-ball"></div><h3>Ball</h3><p>Press to flip gravity, rolls on any surface.</p></div>
-      <div class="howto-card"><div class="howto-icon mode-ufo"></div><h3>UFO</h3><p>Each press gives one hop. Tap repeatedly.</p></div>
-      <div class="howto-card"><div class="howto-icon mode-wave"></div><h3>Wave</h3><p>Hold to angle up, release to angle down. Touch nothing.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-bolt"></div><h3>Bolt</h3><p>Press to jump. Hold to jump higher.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-pulsar"></div><h3>Pulsar</h3><p>Hold to charge, release to launch.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-comet"></div><h3>Comet</h3><p>Tap to boost, glide floatily between taps.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-anchor"></div><h3>Anchor</h3><p>Press to arc-leap to the opposite surface.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-phase"></div><h3>Phase</h3><p>Hold/release steers momentum, not direction. Touch nothing.</p></div>
     </div>
     <p class="howto-note">Yellow orbs give a mid-air boost when you press near them. Pink pads bounce you automatically. Portals switch your mode or flip gravity. Reach the flag to win — or race the clock forever in Endless Mode.</p>
     <button id="btn-howto-back" class="btn btn-primary">Back</button>
@@ -58,7 +58,7 @@
     <div class="hud-top">
       <button id="btn-pause" class="icon-btn">❚❚</button>
       <div class="progress-wrap"><div id="progress-bar" class="progress-bar"></div></div>
-      <div id="mode-badge" class="mode-badge">CUBE</div>
+      <div id="mode-badge" class="mode-badge">BOLT</div>
     </div>
     <div class="hud-bottom">
       <div id="attempt-counter" class="attempt-counter">Attempt 1</div>
@@ -101,11 +101,11 @@
       </label>
       <label class="ed-field">Mode
         <select id="ed-mode">
-          <option value="cube">Cube</option>
-          <option value="ship">Ship</option>
-          <option value="ball">Ball</option>
-          <option value="ufo">UFO</option>
-          <option value="wave">Wave</option>
+          <option value="bolt">Bolt</option>
+          <option value="pulsar">Pulsar</option>
+          <option value="comet">Comet</option>
+          <option value="anchor">Anchor</option>
+          <option value="phase">Phase</option>
         </select>
       </label>
       <button id="btn-ed-play" class="btn btn-primary">▶ Test</button>

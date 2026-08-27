@@ -110,8 +110,8 @@ var SS = SS || {};
       // deep-ish clone so triggered portals/gaps don't mutate stored level
       this.level = JSON.parse(JSON.stringify(this.baseLevel));
     }
-    if (this.endless) this.level.startMode = 'cube';
-    this.player = SS.Entities.createPlayer(this.level.startMode || 'cube');
+    if (this.endless) this.level.startMode = 'bolt';
+    this.player = SS.Entities.createPlayer(this.level.startMode || 'bolt');
     SS.Entities.resetPlayer(this.player, this.level);
     this.camOffset = 0;
     this.speed = this.level.scrollSpeed || C.DEFAULT_SCROLL_SPEED;

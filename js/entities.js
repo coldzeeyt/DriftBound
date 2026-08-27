@@ -17,10 +17,14 @@ var SS = SS || {};
 
   function worldToScreenY(layout, y) { return layout.groundScreenY - y; }
 
+  // Modes that rest on a surface (floor/ceiling) between moves.
+  // bolt: jumps off it. pulsar: charges from it. anchor: arcs away from it.
+  function isSolidGroundMode(mode) { return mode === 'bolt' || mode === 'pulsar' || mode === 'anchor'; }
+
   // ---- Player ---------------------------------------------------------------
   function createPlayer(mode) {
     return {
-      mode: mode || 'cube',
+      mode: mode || 'bolt',
       y: 0,
       vy: 0,
       gravityDir: 1,      // 1 = normal (rests on ground), -1 = flipped (rests on ceiling)
@@ -32,7 +36,11 @@ var SS = SS || {};
       triggered: new Set(), // indices of one-shot objects already triggered this run
       dead: false,
       won: false,
-      hopCooldown: 0
+      holdTime: 0,        // bolt: how long the current jump has been extended
+      chargeTime: 0,       // pulsar: how long the current charge has built up
+      boostCooldown: 0,    // comet: time until the next boost tap is accepted
+      arcActive: false,    // anchor: mid-leap between surfaces
+      arcT: 0, arcFrom: 0, arcTo: 0, arcDir: 1
     };
   }
 
@@ -41,7 +49,7 @@ var SS = SS || {};
   }
 
   function resetPlayer(player, level) {
-    player.mode = level.startMode || 'cube';
+    player.mode = level.startMode || 'bolt';
     player.gravityDir = 1;
     player.vy = 0;
     player.grounded = true;
@@ -50,7 +58,11 @@ var SS = SS || {};
     player.triggered = new Set();
     player.dead = false;
     player.won = false;
-    player.hopCooldown = 0;
+    player.holdTime = 0;
+    player.chargeTime = 0;
+    player.boostCooldown = 0;
+    player.arcActive = false;
+    player.arcT = 0;
     const layout = makeLayout();
     player.y = restPosition(layout, player);
   }
@@ -66,80 +78,122 @@ var SS = SS || {};
     if (player.dead || player.won) return;
     const layout = makeLayout();
     const mode = player.mode;
-    const solidGround = (mode === 'cube' || mode === 'ball');
+    const solidGround = isSolidGroundMode(mode);
 
-    // squash/rotation decay
+    // squash decay (per-mode code below can override rotation)
     player.squash = SS.lerp(player.squash, 1, Math.min(1, dt * 10));
-    if (mode === 'cube') player.rotation += dt * (player.grounded ? 0 : 6.5) * player.gravityDir;
-    else if (mode === 'ball') player.rotation += dt * 9 * player.gravityDir;
-    else player.rotation = 0;
 
-    if (mode === 'wave') {
-      const dir = input.held ? 1 : -1;
-      player.vy = C.WAVE_SPEED * player.gravityDir * dir;
-      player.y += player.vy * dt;
-    } else if (mode === 'ship') {
-      let accel = -C.GRAVITY * player.gravityDir;
-      if (input.held) accel += C.SHIP_THRUST * player.gravityDir;
-      player.vy += accel * dt;
-      player.vy = SS.clamp(player.vy, -C.SHIP_MAX_VY, C.SHIP_MAX_VY);
-      player.y += player.vy * dt;
-    } else if (mode === 'ufo') {
+    if (mode === 'pulsar') {
       player.vy += (-C.GRAVITY * player.gravityDir) * dt;
-      player.hopCooldown -= dt;
-      if (input.justPressed && player.hopCooldown <= 0) {
-        player.vy = C.UFO_HOP_SPEED * player.gravityDir;
-        player.hopCooldown = 0.16;
+      if (player.grounded) {
+        if (input.held) {
+          player.chargeTime = Math.min(C.PULSAR_MAX_CHARGE_TIME, player.chargeTime + dt);
+          player.squash = 1 + 0.3 * (player.chargeTime / C.PULSAR_MAX_CHARGE_TIME);
+        }
+        if (input.justReleased) {
+          const ct = player.chargeTime / C.PULSAR_MAX_CHARGE_TIME;
+          const power = SS.lerp(C.PULSAR_MIN_LAUNCH, C.PULSAR_MAX_LAUNCH, ct);
+          player.vy = power * player.gravityDir;
+          player.grounded = false;
+          player.chargeTime = 0;
+          player.squash = 1.5;
+          SS.Audio.jump();
+        }
+      }
+      player.y += player.vy * dt;
+    } else if (mode === 'comet') {
+      player.boostCooldown = Math.max(0, player.boostCooldown - dt);
+      if (input.justPressed && player.boostCooldown <= 0) {
+        player.vy = C.COMET_BOOST_SPEED * player.gravityDir;
+        player.boostCooldown = C.COMET_BOOST_COOLDOWN;
         player.squash = 1.3;
         SS.Audio.jump();
       }
+      player.vy += (-C.GRAVITY * player.gravityDir) * dt * 0.5;
+      const descending = player.vy * player.gravityDir < 0;
+      if (descending && Math.abs(player.vy) > C.COMET_TERMINAL_FALL) {
+        player.vy = -C.COMET_TERMINAL_FALL * player.gravityDir;
+      }
+      player.rotation = SS.clamp(-player.vy * player.gravityDir / 1400, -0.5, 0.5);
       player.y += player.vy * dt;
-    } else if (mode === 'ball') {
-      player.vy += (-C.GRAVITY * player.gravityDir) * dt;
-      if (input.justPressed) {
+    } else if (mode === 'anchor') {
+      if (player.arcActive) {
+        player.arcT += dt;
+        const tt = SS.clamp(player.arcT / C.ANCHOR_ARC_TIME, 0, 1);
+        const eased = tt < 0.5 ? 2 * tt * tt : 1 - Math.pow(-2 * tt + 2, 2) / 2;
+        const bulge = Math.sin(tt * Math.PI) * C.ANCHOR_ARC_BULGE;
+        player.y = SS.lerp(player.arcFrom, player.arcTo, eased) + bulge;
+        player.rotation = tt * Math.PI * 2 * player.arcDir;
+        if (tt >= 1) {
+          player.arcActive = false;
+          player.y = player.arcTo;
+          player.vy = 0;
+          player.grounded = true;
+          player.rotation = 0;
+        }
+      } else if (input.justPressed && player.grounded) {
+        player.arcActive = true;
+        player.arcT = 0;
+        player.arcFrom = player.y;
         player.gravityDir *= -1;
-        player.vy = C.BALL_FLIP_KICK * player.gravityDir;
+        player.arcTo = restPosition(layout, player);
+        player.arcDir = player.gravityDir;
         player.grounded = false;
-        player.squash = 1.35;
+        player.squash = 1.2;
         SS.Audio.flip();
       }
+    } else if (mode === 'phase') {
+      const desiredDir = input.held ? player.gravityDir : -player.gravityDir;
+      player.vy += C.PHASE_ACCEL * desiredDir * dt;
+      player.vy = SS.clamp(player.vy, -C.PHASE_MAX_SPEED, C.PHASE_MAX_SPEED);
+      player.rotation = SS.clamp(-player.vy / 700, -0.6, 0.6);
       player.y += player.vy * dt;
-    } else { // cube
-      player.vy += (-C.GRAVITY * player.gravityDir) * dt;
+    } else { // bolt
+      let gmul = 1;
+      if (input.held && !player.grounded && player.holdTime < C.BOLT_MAX_HOLD_TIME && player.vy * player.gravityDir > 0) {
+        gmul = C.BOLT_HOLD_GRAVITY_MULT;
+        player.holdTime += dt;
+      }
+      player.vy += (-C.GRAVITY * player.gravityDir) * gmul * dt;
       if (input.justPressed && player.grounded) {
         player.vy = C.JUMP_SPEED * player.gravityDir;
         player.grounded = false;
+        player.holdTime = 0;
         player.squash = 1.35;
         SS.Audio.jump();
       }
+      player.rotation += dt * (player.grounded ? 0 : 5.5) * player.gravityDir;
       player.y += player.vy * dt;
     }
 
-    // ground / ceiling resolution
-    const rest = restPosition(layout, player);
-    const movingTowardRest = (player.gravityDir === 1) ? (player.y <= 0) : (player.y >= rest);
-    if (solidGround) {
-      const gapHere = player.gravityDir === 1 && inGap(level, playerWorldX);
-      if (!gapHere && movingTowardRest) {
-        player.y = rest;
-        player.vy = 0;
-        player.grounded = true;
+    // ground / ceiling resolution (skipped mid-arc: anchor's arc owns player.y)
+    const midArc = (mode === 'anchor' && player.arcActive);
+    if (!midArc) {
+      const rest = restPosition(layout, player);
+      const movingTowardRest = (player.gravityDir === 1) ? (player.y <= 0) : (player.y >= rest);
+      if (solidGround) {
+        const gapHere = player.gravityDir === 1 && inGap(level, playerWorldX);
+        if (!gapHere && movingTowardRest) {
+          player.y = rest;
+          player.vy = 0;
+          player.grounded = true;
+        } else {
+          player.grounded = false;
+        }
+        // still clamp against opposite boundary
+        if (player.gravityDir === 1 && player.y > layout.worldCeil - player.size) {
+          player.y = layout.worldCeil - player.size; player.vy = 0;
+        }
+        if (player.gravityDir === -1 && player.y < 0 && !gapHere) {
+          player.y = 0; player.vy = 0;
+        }
+        if (player.y < C.PIT_DEATH_Y) { fx.onDeath('fell'); return; }
       } else {
-        player.grounded = false;
-      }
-      // still clamp against opposite boundary
-      if (player.gravityDir === 1 && player.y > layout.worldCeil - player.size) {
-        player.y = layout.worldCeil - player.size; player.vy = 0;
-      }
-      if (player.gravityDir === -1 && player.y < 0 && !gapHere) {
-        player.y = 0; player.vy = 0;
-      }
-      if (player.y < C.PIT_DEATH_Y) { fx.onDeath('fell'); return; }
-    } else {
-      // flying modes: touching ground or ceiling kills
-      if (player.y <= 0 || player.y >= layout.worldCeil - player.size) {
-        fx.onDeath('boundary');
-        return;
+        // flying modes: touching ground or ceiling kills
+        if (player.y <= 0 || player.y >= layout.worldCeil - player.size) {
+          fx.onDeath('boundary');
+          return;
+        }
       }
     }
 
@@ -159,6 +213,7 @@ var SS = SS || {};
   function checkObjectCollisions(player, level, playerWorldX, input, fx, layout) {
     const pr = playerRect(player, playerWorldX, layout);
     const objs = level.objects;
+    const midArc = (player.mode === 'anchor' && player.arcActive);
     for (let i = 0; i < objs.length; i++) {
       const o = objs[i];
       if (Math.abs(o.x - playerWorldX) > 200) continue;
@@ -170,8 +225,8 @@ var SS = SS || {};
         }
       } else if (o.type === 'block') {
         if (SS.aabb(pr.x, pr.y, pr.w, pr.h, o.x, o.y, o.w, o.h)) {
-          const solidGround = (player.mode === 'cube' || player.mode === 'ball');
-          if (!solidGround) { fx.onDeath('block'); return; }
+          const solid = isSolidGroundMode(player.mode) && !midArc;
+          if (!solid) { fx.onDeath('block'); return; }
           // landing on top?
           const landingFromAbove = player.gravityDir === 1
             ? (player.vy <= 0 && (pr.y + 2) >= o.y + o.h - 12)
@@ -190,7 +245,7 @@ var SS = SS || {};
         const cx = playerWorldX, cy = player.y + player.size / 2;
         const dx = cx - o.x, dy = cy - o.y;
         if (dx * dx + dy * dy < C.ORB_TRIGGER_RADIUS * C.ORB_TRIGGER_RADIUS) {
-          if (input.justPressed && player.mode !== 'wave') {
+          if (input.justPressed && player.mode !== 'phase' && player.mode !== 'anchor') {
             player.vy = C.JUMP_SPEED * player.gravityDir * (o.orbDir || 1);
             player.squash = 1.4;
             player.triggered.add(i);
@@ -199,7 +254,7 @@ var SS = SS || {};
         }
       } else if (o.type === 'pad') {
         if (player.triggered.has(i)) continue;
-        if (SS.aabb(pr.x, pr.y, pr.w, pr.h, o.x, o.y, o.w, o.h) && player.mode !== 'wave') {
+        if (SS.aabb(pr.x, pr.y, pr.w, pr.h, o.x, o.y, o.w, o.h) && player.mode !== 'phase' && player.mode !== 'anchor') {
           player.vy = C.JUMP_SPEED * 1.25 * player.gravityDir;
           player.squash = 1.5;
           player.triggered.add(i);
@@ -213,6 +268,7 @@ var SS = SS || {};
           player.triggered.add(i);
           player.mode = o.mode;
           player.grounded = false;
+          player.arcActive = false;
           SS.Audio.portal();
         }
       } else if (o.type === 'portalGravity') {
@@ -231,7 +287,7 @@ var SS = SS || {};
 
   //// Rendering /////////////////////////////////////////////////////////////
   const MODE_COLORS = {
-    cube: '#4fd1ff', ship: '#ffb14f', ball: '#c14fff', ufo: '#5fffa0', wave: '#ff5fa2'
+    bolt: '#4fd1ff', pulsar: '#ffb14f', comet: '#ff9a4f', anchor: '#c14fff', phase: '#5fe8ff'
   };
 
   function drawBackground(ctx, layout, level, camOffset, t) {
@@ -385,55 +441,102 @@ var SS = SS || {};
     });
     ctx.globalAlpha = 1;
 
+    const cx = screenX, cy = sy + player.size / 2, s = player.size;
+
+    // pulsar charge ring drawn outside the squash/rotate transform
+    if (player.mode === 'pulsar' && player.chargeTime > 0) {
+      const ct = player.chargeTime / C.PULSAR_MAX_CHARGE_TIME;
+      ctx.strokeStyle = 'rgba(255,177,79,' + (0.3 + ct * 0.5) + ')';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, s / 2 + 6 + ct * 14, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     ctx.save();
-    ctx.translate(screenX, sy + player.size / 2);
+    ctx.translate(cx, cy);
     ctx.rotate(player.rotation);
     ctx.scale(1 / player.squash, player.squash);
 
-    if (player.mode === 'cube') {
+    if (player.mode === 'bolt') {
+      const r = 6;
       ctx.fillStyle = color;
-      ctx.fillRect(-player.size / 2, -player.size / 2, player.size, player.size);
+      roundRect(ctx, -s / 2, -s / 2, s, s, r);
+      ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.5)';
       ctx.lineWidth = 2;
-      ctx.strokeRect(-player.size / 2, -player.size / 2, player.size, player.size);
+      roundRect(ctx, -s / 2, -s / 2, s, s, r);
+      ctx.stroke();
       ctx.fillStyle = '#04121a';
-      ctx.fillRect(-6, -6, 5, 5);
-      ctx.fillRect(4, -6, 5, 5);
-    } else if (player.mode === 'ball') {
+      ctx.beginPath();
+      ctx.moveTo(2, -9); ctx.lineTo(-4, 1); ctx.lineTo(1, 1);
+      ctx.lineTo(-3, 9); ctx.lineTo(5, -2); ctx.lineTo(0, -2);
+      ctx.closePath(); ctx.fill();
+    } else if (player.mode === 'pulsar') {
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(0, 0, player.size / 2, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, player.size / 2, 0, Math.PI * 2); ctx.stroke();
-    } else if (player.mode === 'ship') {
+      ctx.beginPath(); ctx.arc(0, 0, s / 2, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, s / 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.beginPath(); ctx.arc(0, 0, s / 5, 0, Math.PI * 2); ctx.fill();
+    } else if (player.mode === 'comet') {
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(-player.size / 2, 0);
-      ctx.lineTo(player.size / 2, -player.size / 2.6);
-      ctx.lineTo(player.size / 2, player.size / 2.6);
+      ctx.arc(s * 0.12, 0, s / 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.15, -s / 3.2);
+      ctx.lineTo(-s / 2, 0);
+      ctx.lineTo(-s * 0.15, s / 3.2);
       ctx.closePath(); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.beginPath(); ctx.arc(2, 0, 5, 0, Math.PI * 2); ctx.fill();
-    } else if (player.mode === 'ufo') {
+      ctx.beginPath(); ctx.arc(s * 0.2, -2, 4, 0, Math.PI * 2); ctx.fill();
+    } else if (player.mode === 'anchor') {
       ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.ellipse(0, 2, player.size / 2, player.size / 3.2, 0, 0, Math.PI * 2);
+      polygon(ctx, 0, 0, s / 1.9, 6);
       ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.beginPath(); ctx.arc(0, -4, player.size / 4.5, 0, Math.PI * 2); ctx.fill();
-    } else if (player.mode === 'wave') {
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
+      polygon(ctx, 0, 0, s / 1.9, 6);
+      ctx.stroke();
+    } else if (player.mode === 'phase') {
       ctx.fillStyle = color;
+      ctx.globalAlpha = 0.9;
       ctx.beginPath();
-      ctx.moveTo(-player.size / 2, -player.size / 2);
-      ctx.lineTo(player.size / 2, 0);
-      ctx.lineTo(-player.size / 2, player.size / 2);
+      ctx.moveTo(0, -s / 2);
+      ctx.lineTo(s / 2.3, 0);
+      ctx.lineTo(0, s / 2);
+      ctx.lineTo(-s / 2.3, 0);
       ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+      ctx.stroke();
     }
     ctx.restore();
     ctx.globalAlpha = 1;
   }
 
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function polygon(ctx, cx, cy, r, sides) {
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = (Math.PI * 2 * i) / sides - Math.PI / 2;
+      const px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+
   SS.Entities = {
     makeLayout, worldToScreenY, createPlayer, resetPlayer, updatePlayer,
-    drawBackground, drawGroundGaps, drawObjects, drawPlayer, MODE_COLORS
+    drawBackground, drawGroundGaps, drawObjects, drawPlayer, MODE_COLORS, isSolidGroundMode
   };
 })();
