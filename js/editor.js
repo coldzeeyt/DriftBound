@@ -130,9 +130,16 @@ var SS = SS || {};
     return document.getElementById('screen-editor').classList.contains('active');
   };
 
+  // Real measured toolbar height (it wraps to multiple rows on narrow
+  // screens), not a guessed pixel constant, so taps just below it still work.
+  Editor.prototype._toolbarBottom = function () {
+    const el = document.querySelector('.editor-toolbar');
+    return el ? el.getBoundingClientRect().bottom : 100;
+  };
+
   Editor.prototype._onDown = function (clientX, clientY, button) {
     if (!this._isEditorActive()) return;
-    if (clientY < 100) return; // toolbar area
+    if (clientY < this._toolbarBottom()) return; // toolbar area
     this.dragging = true;
     this.moved = false;
     this.dragStartX = clientX;
@@ -159,7 +166,7 @@ var SS = SS || {};
     if (!this.dragging) return;
     const wasClick = !this.moved;
     this.dragging = false;
-    if (wasClick && this._isEditorActive() && this._downClientY >= 100) {
+    if (wasClick && this._isEditorActive() && this._downClientY >= this._toolbarBottom()) {
       if (this._pendingButton === 2) {
         this._eraseNear(this.hoverWorld.x, this.hoverWorld.y);
       } else {
