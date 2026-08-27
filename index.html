@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Wave Rush</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+
+<!-- MAIN MENU -->
+<div id="screen-menu" class="screen active">
+  <div class="panel menu-panel">
+    <h1 class="logo">WAVE<span>RUSH</span></h1>
+    <p class="tagline">a sideways-scrolling reflex game</p>
+    <div class="menu-buttons">
+      <button id="btn-play" class="btn btn-primary">Play</button>
+      <button id="btn-endless" class="btn">Endless Mode</button>
+      <button id="btn-editor" class="btn">Level Editor</button>
+      <button id="btn-howto" class="btn btn-ghost">How to Play</button>
+    </div>
+    <div class="menu-footer">Space / Click / Tap to jump &middot; Esc to pause</div>
+  </div>
+</div>
+
+<!-- HOW TO PLAY -->
+<div id="screen-howto" class="screen">
+  <div class="panel howto-panel">
+    <h2>How to Play</h2>
+    <div class="howto-grid">
+      <div class="howto-card"><div class="howto-icon mode-cube"></div><h3>Cube</h3><p>Press to jump. Lands on ground &amp; blocks.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-ship"></div><h3>Ship</h3><p>Hold to fly up, release to fall.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-ball"></div><h3>Ball</h3><p>Press to flip gravity, rolls on any surface.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-ufo"></div><h3>UFO</h3><p>Each press gives one hop. Tap repeatedly.</p></div>
+      <div class="howto-card"><div class="howto-icon mode-wave"></div><h3>Wave</h3><p>Hold to angle up, release to angle down. Touch nothing.</p></div>
+    </div>
+    <p class="howto-note">Yellow orbs give a mid-air boost when you press near them. Pink pads bounce you automatically. Portals switch your mode or flip gravity. Reach the flag to win — or race the clock forever in Endless Mode.</p>
+    <button id="btn-howto-back" class="btn btn-primary">Back</button>
+  </div>
+</div>
+
+<!-- LEVEL SELECT -->
+<div id="screen-levels" class="screen">
+  <div class="panel levels-panel">
+    <h2>Select Level</h2>
+    <div id="level-list" class="level-list"></div>
+    <div class="levels-actions">
+      <button id="btn-levels-new" class="btn">New Level in Editor</button>
+      <button id="btn-levels-back" class="btn btn-ghost">Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME HUD -->
+<div id="screen-game" class="screen">
+  <div class="hud">
+    <div class="hud-top">
+      <button id="btn-pause" class="icon-btn">❚❚</button>
+      <div class="progress-wrap"><div id="progress-bar" class="progress-bar"></div></div>
+      <div id="mode-badge" class="mode-badge">CUBE</div>
+    </div>
+    <div class="hud-bottom">
+      <div id="attempt-counter" class="attempt-counter">Attempt 1</div>
+      <div id="distance-counter" class="attempt-counter" style="display:none">0m</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAUSE OVERLAY -->
+<div id="screen-pause" class="screen overlay">
+  <div class="panel">
+    <h2>Paused</h2>
+    <div class="menu-buttons">
+      <button id="btn-resume" class="btn btn-primary">Resume</button>
+      <button id="btn-restart" class="btn">Restart</button>
+      <button id="btn-quit" class="btn btn-ghost">Quit to Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div id="screen-result" class="screen overlay">
+  <div class="panel">
+    <h2 id="result-title">Result</h2>
+    <div id="result-stats" class="result-stats"></div>
+    <div class="menu-buttons">
+      <button id="btn-result-retry" class="btn btn-primary">Retry</button>
+      <button id="btn-result-quit" class="btn btn-ghost">Quit to Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR -->
+<div id="screen-editor" class="screen">
+  <div class="editor-toolbar">
+    <div class="editor-row">
+      <input id="ed-name" type="text" placeholder="Level name" maxlength="40">
+      <label class="ed-field">Speed
+        <input id="ed-speed" type="range" min="200" max="700" step="10" value="360">
+      </label>
+      <label class="ed-field">Mode
+        <select id="ed-mode">
+          <option value="cube">Cube</option>
+          <option value="ship">Ship</option>
+          <option value="ball">Ball</option>
+          <option value="ufo">UFO</option>
+          <option value="wave">Wave</option>
+        </select>
+      </label>
+      <button id="btn-ed-play" class="btn btn-primary">▶ Test</button>
+      <button id="btn-ed-save" class="btn">Save</button>
+      <button id="btn-ed-export" class="btn">Export</button>
+      <button id="btn-ed-import" class="btn">Import</button>
+      <button id="btn-ed-clear" class="btn btn-ghost">Clear</button>
+      <button id="btn-ed-back" class="btn btn-ghost">Exit</button>
+      <input id="ed-import-file" type="file" accept="application/json" style="display:none">
+    </div>
+    <div class="editor-row palette" id="ed-palette"></div>
+  </div>
+  <div class="editor-hint">Click: place &middot; Right-click / Eraser: remove &middot; Ground row: toggle pit &middot; Drag empty space: pan &middot; Wheel: pan &middot; Ctrl+Z: undo</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/core.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/game.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
