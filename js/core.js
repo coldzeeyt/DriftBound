@@ -37,8 +37,8 @@ var SS = (function () {
   }
 
   //// Storage ///////////////////////////////////////////////////////////////
-  const STORAGE_KEY = 'waverush.levels.v1';
-  const HISCORE_KEY = 'waverush.hiscore.v1';
+  const STORAGE_KEY = 'driftbound.levels.v1';
+  const HISCORE_KEY = 'driftbound.hiscore.v1';
   const Storage = {
     getCustomLevels() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }

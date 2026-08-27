@@ -1,4 +1,4 @@
-# sidewayscroller — Wave Rush
+# Driftbound
 
 A browser-based, Geometry-Dash-style sideways scroller. The world scrolls
 forward at a constant pace, you tap/hold/click to survive, and you can build

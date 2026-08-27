@@ -53,7 +53,7 @@ var SS = SS || {};
     objs.push(spike(3620));
     objs.push(finish(3950));
     return {
-      id: 'builtin_1', name: 'First Steps', author: 'Wave Rush', builtin: true,
+      id: 'builtin_1', name: 'First Steps', author: 'Driftbound', builtin: true,
       scrollSpeed: 340, backgroundColor: '#0b1a2e', startMode: 'cube',
       length: 4100, groundGaps: gapsRange(52, 3), objects: objs
     };
@@ -81,7 +81,7 @@ var SS = SS || {};
     objs.push(pad(4650, 0));
     objs.push(finish(5050));
     return {
-      id: 'builtin_2', name: 'Skyward', author: 'Wave Rush', builtin: true,
+      id: 'builtin_2', name: 'Skyward', author: 'Driftbound', builtin: true,
       scrollSpeed: 380, backgroundColor: '#0e1533', startMode: 'cube',
       length: 5150, groundGaps: [], objects: objs
     };
@@ -111,7 +111,7 @@ var SS = SS || {};
     objs.push(pad(5100, 0));
     objs.push(finish(5450));
     return {
-      id: 'builtin_3', name: 'Gravity Flux', author: 'Wave Rush', builtin: true,
+      id: 'builtin_3', name: 'Gravity Flux', author: 'Driftbound', builtin: true,
       scrollSpeed: 360, backgroundColor: '#1a0e33', startMode: 'ball',
       length: 5550, groundGaps: [], objects: objs
     };
@@ -152,7 +152,7 @@ var SS = SS || {};
     objs.push(...spikeRow(6300, 4, 0));
     objs.push(finish(6750));
     return {
-      id: 'builtin_4', name: 'Mode Rush', author: 'Wave Rush', builtin: true,
+      id: 'builtin_4', name: 'Mode Rush', author: 'Driftbound', builtin: true,
       scrollSpeed: 420, backgroundColor: '#160b1e', startMode: 'cube',
       length: 6850, groundGaps: gapsRange(112, 3), objects: objs
     };

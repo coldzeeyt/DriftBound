@@ -30,5 +30,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Wave Rush running at http://localhost:${PORT}`);
+  console.log(`Driftbound running at http://localhost:${PORT}`);
 });
